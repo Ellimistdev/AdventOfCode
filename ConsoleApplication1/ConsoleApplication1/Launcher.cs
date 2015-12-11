@@ -21,7 +21,10 @@ namespace ConsoleApplication1
                     break;
                 case 2:
                     DayTwo.dayTwo(filePath);
-                    break;                
+                    break;
+                case 3:
+                    DayThree.dayThree(filePath);
+                    break;              
                 default:
                     break;
             }
