@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace ConsoleApplication1
+namespace Advent
 {
     class Launcher
     {
@@ -23,7 +23,11 @@ namespace ConsoleApplication1
                     DayTwo.dayTwo(filePath);
                     break;
                 case 3:
-                    DayThree.dayThree(filePath);
+                    Console.WriteLine("How many Santas?");
+                    int santaCount = Convert.ToInt32(Console.ReadLine());
+                    if (santaCount == 1)
+                        DayThree.oneSanta(filePath);
+                    DayThree.twoSantas(filePath);                    
                     break;              
                 default:
                     break;

@@ -10,3 +10,6 @@ C:\gitprojects\advent\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleA
 C:\gitprojects\advent\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.csprojResolveAssemblyReference.cache
 C:\gitprojects\advent\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe
 C:\gitprojects\advent\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.pdb
+C:\GitProjects\endotnick\advent\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
+C:\GitProjects\endotnick\advent\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
+C:\GitProjects\endotnick\advent\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb
