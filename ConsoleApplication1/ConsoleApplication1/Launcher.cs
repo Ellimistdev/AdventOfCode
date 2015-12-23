@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
 namespace Advent
 {
@@ -17,7 +12,7 @@ namespace Advent
             switch (day)
             {
                 case 1:
-                    DayOne.dayOne();
+                    DayOne.dayOne(filePath);
                     break;
                 case 2:
                     DayTwo.dayTwo(filePath);

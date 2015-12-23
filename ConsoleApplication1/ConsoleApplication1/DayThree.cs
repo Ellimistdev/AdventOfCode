@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace Advent
@@ -17,13 +15,10 @@ namespace Advent
             // ^ v ^ v ^ v ^ v ^ v delivers a bunch of presents to some very lucky children at only 2 houses.
 
             char[] instructions = File.ReadAllText(filePath).ToCharArray();
-
-            List<Tuple<int, int>> coords = ProcessInstructions(instructions);
-
-            List<Tuple<int, int>> uniqueAddresses = DeDupeCoords(coords);
-
-            Console.WriteLine(uniqueAddresses.Count + " houses receive a present.");
-
+            List<Tuple<int, int>> addressess = new List<Tuple<int, int>>();
+            addressess.Add(new Tuple<int, int>(0, 0)); // only count starting location once.
+            List<Tuple<int, int>> coords = ProcessInstructions(instructions, addressess);
+            Console.WriteLine(coords.Count + " houses receive a present.");
         }
         public static void twoSantas(string filePath)
         {
@@ -50,18 +45,16 @@ namespace Advent
                     realIndex++;
                 }
             }
+            List<Tuple<int, int>> addressess = new List<Tuple<int, int>>();
+            addressess.Add(new Tuple<int, int>(0, 0)); // only count starting location once.
 
-            List<Tuple<int, int>> roboUnique = DeDupeCoords(ProcessInstructions(roboInstructions));
-            List<Tuple<int, int>> realUnique = DeDupeCoords(ProcessInstructions(realInstructions));
+            ProcessInstructions(roboInstructions, addressess);
+            ProcessInstructions(realInstructions, addressess);
 
-            Console.WriteLine("RoboSanta goes to {0} houses!", roboUnique.Count);
-            Console.WriteLine("RealSanta goes to {0} houses!", realUnique.Count);
-            Console.WriteLine("That's a combined total of {0} houses!", (roboUnique.Count + realUnique.Count));
-
+            Console.WriteLine("Presents go to {0} houses!", addressess.Count);
         }
-        public static List<Tuple<int, int>> ProcessInstructions(char[] instructions)
+        public static List<Tuple<int, int>> ProcessInstructions(char[] instructions, List<Tuple<int, int>> addressess)
         {
-            List<Tuple<int, int>> coords = new List<Tuple<int, int>>();
             int x = 0;
             int y = 0;
             
@@ -75,22 +68,15 @@ namespace Advent
                     x--;
                 else
                     y--;
+
                 Tuple<int, int> address = new Tuple<int, int>(x, y);
-
-                coords.Add(address);
-
+                if (!addressess.Contains(address))
+                {
+                    addressess.Add(address);
+                }
             }
-            return coords;
-
-        }
-
-        public static List<Tuple<int,int>> DeDupeCoords(List<Tuple<int,int>> coords)
-        {           
-            // with Linq
-            List<Tuple<int, int>> newcoords = coords.Distinct().ToList();
-            return newcoords;
+            return addressess;
         }
     }
-
 }
 
