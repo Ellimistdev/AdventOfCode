@@ -23,7 +23,13 @@ namespace Advent
                     if (santaCount == 1)
                         DayThree.oneSanta(filePath);
                     DayThree.twoSantas(filePath);                    
-                    break;              
+                    break;
+                case 4:
+                    DayFour.dayFour();
+                    break;
+                case 5:
+                    DayFive.dayFive(filePath);
+                        break;
                 default:
                     break;
             }

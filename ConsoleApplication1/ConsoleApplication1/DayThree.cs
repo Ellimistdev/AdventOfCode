@@ -16,7 +16,7 @@ namespace Advent
 
             char[] instructions = File.ReadAllText(filePath).ToCharArray();
             List<Tuple<int, int>> addressess = new List<Tuple<int, int>>();
-            addressess.Add(new Tuple<int, int>(0, 0)); // only count starting location once.
+            addressess.Add(Tuple.Create(0, 0)); // only count starting location once.
             List<Tuple<int, int>> coords = ProcessInstructions(instructions, addressess);
             Console.WriteLine(coords.Count + " houses receive a present.");
         }
@@ -46,7 +46,7 @@ namespace Advent
                 }
             }
             List<Tuple<int, int>> addressess = new List<Tuple<int, int>>();
-            addressess.Add(new Tuple<int, int>(0, 0)); // only count starting location once.
+            addressess.Add(Tuple.Create(0, 0)); // only count starting location once.
 
             ProcessInstructions(roboInstructions, addressess);
             ProcessInstructions(realInstructions, addressess);
@@ -69,7 +69,7 @@ namespace Advent
                 else
                     y--;
 
-                Tuple<int, int> address = new Tuple<int, int>(x, y);
+                Tuple<int, int> address = Tuple.Create(x, y);
                 if (!addressess.Contains(address))
                 {
                     addressess.Add(address);
