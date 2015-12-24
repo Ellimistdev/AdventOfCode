@@ -4,9 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApplication1
+namespace Advent
 {
     class DaySix
     {
+        public static void daySix()
+        {
+
+        }
+
     }
 }
