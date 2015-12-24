@@ -35,6 +35,7 @@ namespace Advent
                     DayFive.partTwo(filePath);
                     break;
                 case 6:
+                    DaySix.daySix(filePath);
                     break;
                 default:
                     Console.WriteLine("Please enter a numberal between 1 and 6");

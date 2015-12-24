@@ -12,8 +12,7 @@ namespace Advent
             List<Present> Presents = new List<Present>();
             foreach (string line in File.ReadLines(filePath))
             {
-                string[] strArray;
-                strArray = line.Split('x');
+                string[] strArray = line.Split('x');
                 Present currentPresent = new Present();
 
                 currentPresent.Length = int.Parse(strArray[0]);
