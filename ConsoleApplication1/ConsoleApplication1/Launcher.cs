@@ -28,9 +28,16 @@ namespace Advent
                     DayFour.dayFour();
                     break;
                 case 5:
-                    DayFive.dayFive(filePath);
-                        break;
+                    Console.WriteLine("Which part?");
+                    int part = Convert.ToInt32(Console.ReadLine());
+                    if (part == 1)
+                        DayFive.partOne(filePath);
+                    DayFive.partTwo(filePath);
+                    break;
+                case 6:
+                    break;
                 default:
+                    Console.WriteLine("Please enter a numberal between 1 and 6");
                     break;
             }
             Console.WriteLine("Merry Christmas!");
