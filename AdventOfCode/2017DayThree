@@ -1,0 +1,47 @@
+using System;
+using System.Net;
+using System.IO;
+					
+public class Program
+{
+	public static int goodCount = 0;
+	
+	public static void Main()
+	{
+		//readfile
+		WebClient client = new WebClient();
+		Stream stream = client.OpenRead("https://gist.githubusercontent.com/endotnick/495fc05b32efc408144b7fd182d7fdbc/raw/3a003a87ce4dde4137b163d5ec655c1cb200bd67/AoC2016d3p1.txt");
+		StreamReader reader = new StreamReader(stream);
+		string content = reader.ReadToEnd();
+		
+		//convert file to lines
+		string[] lines = content.Split(new string[] { "\n" }, StringSplitOptions.None);
+		
+		//parse lines
+		foreach(string s in lines)
+		{
+			//split lines
+			string[] values = s.Split(new string[] { "  "},StringSplitOptions.RemoveEmptyEntries);
+			//put ints in array
+			int[] sides = Array.ConvertAll<string,int>(values, int.Parse);			
+			//check if array is triangle	
+			if (isTriangle(sides))
+			{
+				goodCount++;
+				Console.WriteLine("Triangle Found! Count = {0}", goodCount);						
+			}			
+		}	
+		Console.WriteLine("Search complete.");
+	}
+	public static bool isTriangle(int[] sides)
+	{		
+		Array.Sort(sides,0,3);
+		Console.WriteLine("Sorted array: {0}, {1}, {2}", sides[0], sides[1], sides[2]);
+		
+		if (sides[0] + sides[1] > sides[2])
+				return true;
+		else
+			return false;
+	}
+	
+}
