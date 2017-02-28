@@ -9,7 +9,7 @@ public class Program
 {
 	public static int goodCount = 0;
 	public static int selector = 2;
-	
+	public static string alpha = "abcdefghijklmnopqrstuvwxyz";
 	
 	public static void Main()
 	{
@@ -44,7 +44,7 @@ public class Program
 				encryptedName += values[i];
 				
 			}
-			Console.WriteLine("@ {0} - encryptedName == {1} ",watch.Elapsed, encryptedName);
+			//Console.WriteLine("@ {0} - encryptedName == {1} ",watch.Elapsed, encryptedName);
 				
 			//split sectorID/Checksum
 			string[] idCheck = values[values.Length-1].Split('[');
@@ -79,13 +79,14 @@ public class Program
 					{
 					//if good, add sector ID to sectorSum
 					sectorSum += sectorID;
-					Console.WriteLine("@ {0} - sectorSum == {1}",watch.Elapsed, sectorSum);
+					//Console.WriteLine("@ {0} - sectorSum == {1}",watch.Elapsed, sectorSum);
 					Console.WriteLine(s);
 					for (int i = 0; i < (values.Length - 1); i++)
 						{
-							Console.WriteLine(values[i]);
-							decryptedName = decryptString(values[i],sectorID % 26);
+							decryptedName += " " + decryptString(values[i],sectorID % 26);
 						}
+					
+					Console.WriteLine(decryptedName);
 					}
 				
 			
@@ -100,9 +101,13 @@ public class Program
 	public static string decryptString(string source, int shift)
 	{
 		string decryptedString = "";
-		
-		Console.WriteLine("source == {0} shift == {1}",source, shift);
-		
+				
+		foreach (char c in source)
+		{
+			int index = alpha.IndexOf(c);
+			int shiftedIndex = ((index + shift) % 26);
+			decryptedString += alpha.ElementAt(shiftedIndex);
+		}
 		
 		return decryptedString;
 	}
@@ -140,7 +145,4 @@ public class Program
 				
 		return commonLetters;
 	}
-	
-	
-	
 }
