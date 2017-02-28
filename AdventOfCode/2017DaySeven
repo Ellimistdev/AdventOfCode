@@ -1,0 +1,51 @@
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.IO;
+
+public class Program
+{
+	public static void Main()
+	{
+		Stopwatch watch = new Stopwatch();
+		watch.Start();
+		
+		//readfile
+		WebClient client = new WebClient();
+		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2017.7.1");
+		StreamReader reader = new StreamReader(stream);
+		string content = reader.ReadToEnd();
+		
+		//convert file to lines
+		string[] lines = content.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+		foreach (string line in lines)
+			{
+			//gets first hypernet
+			int hypernetFirst = line.IndexOf('[') + 1;
+			int hypernetLast = line.IndexOf(']');
+			string hypernetSubstring = line.Substring(hypernetFirst,hypernetLast - hypernetFirst);
+			
+			//need to handle additional hypernets
+			
+			Console.WriteLine("given {0}, the hypernet is {1}",line, hypernetSubstring);
+			}		
+		
+		//testing isAbba method
+		char[] chars = new char[] {'1','2','2','1'};
+		Console.WriteLine("chars isAbba: {0}",isAbba(chars));
+		
+		Console.WriteLine("@ {0} - End program",watch.Elapsed);
+		watch.Stop();			
+	}	
+	
+	//for a 4 element char array, determine whether it is a palindrome
+	public static bool isAbba(char[] chars)
+	{			
+		if (chars[0] == chars[3] && chars[1] == chars[2])
+		{
+			return true;
+		}
+		else
+			return false;
+	}	
+}
