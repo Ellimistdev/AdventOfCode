@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.IO;
+using System.Collections.Generic;
 
 public class Program
 {
@@ -9,43 +10,195 @@ public class Program
 	{
 		Stopwatch watch = new Stopwatch();
 		watch.Start();
-		
 		//readfile
 		WebClient client = new WebClient();
 		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2017.7.1");
 		StreamReader reader = new StreamReader(stream);
 		string content = reader.ReadToEnd();
-		
 		//convert file to lines
-		string[] lines = content.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+		string[] lines = content.Split(new string[]
+		{
+		"\n"
+		}
+
+		, StringSplitOptions.RemoveEmptyEntries);
+		List<string> supportedIPs = new List<string>();
 		foreach (string line in lines)
+		{
+			Console.WriteLine("@ {0} - line is {1}", watch.Elapsed, line);
+			List<string> hypernetList = new List<string>();
+			List<string> segmentList = new List<string>();
+			int substringStart = 0;
+			int substringEnd = 0;
+			int index = 0;
+			//iterate over string
+			while (substringEnd != line.Length)
 			{
-			//gets first hypernet
-			int hypernetFirst = line.IndexOf('[') + 1;
-			int hypernetLast = line.IndexOf(']');
-			string hypernetSubstring = line.Substring(hypernetFirst,hypernetLast - hypernetFirst);
-			
-			//need to handle additional hypernets
-			
-			Console.WriteLine("given {0}, the hypernet is {1}",line, hypernetSubstring);
-			}		
-		
-		//testing isAbba method
-		char[] chars = new char[] {'1','2','2','1'};
-		Console.WriteLine("chars isAbba: {0}",isAbba(chars));
-		
-		Console.WriteLine("@ {0} - End program",watch.Elapsed);
-		watch.Stop();			
-	}	
-	
+				//when hit '[' set substring end to IndexOf('[') - 1
+				if (line[index] == '[')
+				{
+					substringEnd = index;
+					//add line.Substring(substringStart, substringEnd) to segmentList
+					Console.WriteLine("@ {0} - segment found: {1} in line {2}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart), line);
+					segmentList.Add(line.Substring(substringStart, substringEnd - substringStart));
+					substringStart = index + 1;
+					index++;
+				}
+				//when hit ']' set substring end to IndexOf(']') - 1
+				else if (line[index] == ']')
+				{
+					substringEnd = index;
+					//add line.Substring(substringStart, substringEnd - substringStart) to hypernetList
+					Console.WriteLine("@ {0} - hypernet found: {1} in line {2}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart), line);
+					hypernetList.Add(line.Substring(substringStart, substringEnd - substringStart));
+					substringStart = index + 1;
+					index++;
+				}
+				else if (index == line.Length - 1)
+				{
+					//+1 to get final char
+					substringEnd = index + 1;
+					Console.WriteLine("@ {0} - segment found: {1} in line {2}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart), line);
+					segmentList.Add(line.Substring(substringStart, substringEnd - substringStart));
+					//reached the end of the line, move on
+					break;
+				}
+				else
+				{
+					index++;
+				}
+			}
+
+			Console.WriteLine("@ {0} - segmentList: {1} hypernetList: {2}", watch.Elapsed, segmentList.Count, hypernetList.Count);
+			bool hypernetIsABBA = false;
+			bool hypernetIsBAB = false;
+			//test negative case first
+			foreach (string hypernet in hypernetList)
+			{
+				hypernetIsABBA = (stringIsABBA(hypernet.ToCharArray(), watch));
+				if (hypernetIsABBA)
+				{
+					Console.WriteLine("@ {0} - hypernet {1} Is ABBA, IP {2} does not support TLS", watch.Elapsed, hypernet, line);
+					break;
+				}
+			}
+
+			//hypernetIsAbba, don't need to check any further, move on to the next line
+			if (hypernetIsABBA)
+			{
+				Console.WriteLine("@ {0} - a hypernet Is ABBA, IP {1} does not support TLS", watch.Elapsed, line);
+				continue;
+			}
+
+			Console.WriteLine("@ {0} - if hypernetIsAbba == true, this should not appear. hypernetIsAbba == {1}", watch.Elapsed, hypernetIsABBA);
+			Console.WriteLine("@ {0} - hypernetList.Count {1} complete, moving on", watch.Elapsed, hypernetList.Count);
+			//test positive case
+			bool segmentIsABBA = false;
+			bool segmentIsABA = false;
+			List<string> listABA = new List<string>();
+			foreach (string segment in segmentList)
+			{
+				segmentIsABBA = (stringIsABBA(segment.ToCharArray(), watch));
+				segmentIsABA = (stringIsABA(segment.ToCharArray(), watch, listABA));
+				if (segmentIsABBA)
+				{
+					Console.WriteLine("@ {0} - segment {1} Is Abba, IP {2} supports TLS", watch.Elapsed, segment, line);
+					supportedIPs.Add(line);
+					break;
+				}
+			}
+
+			if (segmentIsABBA == false)
+			{
+				Console.WriteLine("@ {0} - Reached end of Abba check, IP does not support TLS", watch.Elapsed);
+			}
+
+			Console.WriteLine("@ {0} - Moving to next line", watch.Elapsed);
+		}
+
+		Console.WriteLine("@ {0} - IPs supporting TLS: {1}", watch.Elapsed, supportedIPs.Count);
+		Console.WriteLine("@ {0} - End program", watch.Elapsed);
+		watch.Stop();
+	}
+
 	//for a 4 element char array, determine whether it is a palindrome
-	public static bool isAbba(char[] chars)
-	{			
-		if (chars[0] == chars[3] && chars[1] == chars[2])
+	public static bool charSetIsABBA(char[] chars)
+	{
+		//interior chars must be different
+		if (chars[0] == chars[3] && chars[1] == chars[2] && chars[0] != chars[1])
 		{
 			return true;
 		}
 		else
 			return false;
-	}	
+	}
+
+	public static bool charSetIsABA(char[] chars)
+	{
+		//interior chars must be different
+		if (chars[0] == chars[2] && chars[0] != chars[1])
+		{
+			return true;
+		}
+		else
+			return false;
+	}
+
+	public static char[] getChars(char[] chars, int index, int size)
+	{
+		char[] charSet = new char[size];
+		for (int i = 0; i < size; i++)
+		{
+			charSet[i] = chars[index];
+			index++;
+		//chars[], chars[index + 1], chars[index + 2], chars[index + 3]
+		}
+
+		return charSet;
+	}
+
+	public static bool stringIsABA(char[] chars, Stopwatch watch, List<string> ABAList)
+	{
+		bool status = false;
+		int index = 0;
+		while (index < chars.Length - 2)
+		{
+			char[] testArray = getChars(chars, index, 3);
+			//Console.WriteLine("@ {0} - charSet == {1}, {2}, {3}", watch.Elapsed, testArray[0], testArray[1], testArray[2]);
+			if (charSetIsABA(testArray))
+			{
+				Console.WriteLine("@ {0} - {1}{2}{3} isAba - continuing", watch.Elapsed, testArray[0], testArray[1], testArray[2]);
+				status = true;
+				ABAList.Add(new string (testArray));
+				continue;
+			}
+
+			Console.WriteLine("@ {0} - {1}{2}{3} not Aba - index ++", watch.Elapsed, testArray[0], testArray[1], testArray[2]);
+			index++;
+		}
+
+		return status;
+	}
+
+	public static bool stringIsABBA(char[] chars, Stopwatch watch)
+	{
+		bool status = false;
+		int index = 0;
+		while (index < chars.Length - 3)
+		{
+			char[] testArray = getChars(chars, index, 4);
+			//Console.WriteLine("@ {0} - charSet == {1}, {2}, {3}, {4}", watch.Elapsed, testArray[0], testArray[1], testArray[2], testArray[3]);
+			if (charSetIsABBA(testArray))
+			{
+				Console.WriteLine("@ {0} - {1}{2}{3}{4} isAbba - Breaking", watch.Elapsed, testArray[0], testArray[1], testArray[2], testArray[3]);
+				status = true;
+				return status;
+			}
+
+			Console.WriteLine("@ {0} - {1}{2}{3}{4}  not Abba - index ++", watch.Elapsed, testArray[0], testArray[1], testArray[2], testArray[3]);
+			index++;
+		}
+
+		return status;
+	}
 }
