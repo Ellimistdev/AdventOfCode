@@ -1,0 +1,46 @@
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.IO;
+					
+public class Program
+{
+	public static void Main()
+	{
+		Stopwatch watch = new Stopwatch();
+		watch.Start();
+		//readfile
+		WebClient client = new WebClient();
+		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2016d8");
+		StreamReader reader = new StreamReader(stream);
+		string content = reader.ReadToEnd();
+		//convert file to lines
+		string[] lines = content.Split(new string[]{"\n"}, StringSplitOptions.RemoveEmptyEntries);
+		
+		Console.WriteLine(lines[0]);
+		
+		//create grid 50x6
+		
+		//if rect AxB, turn on AxB starting at 0,6
+		//rect 3x2
+		int A = 5;//3
+		int B = 2;//2
+		for (int a = 0; a < A; a++)
+		{
+			for (int b = 6; b > B; b--)
+			{
+				Console.WriteLine("({0},{1}) lit",a,b);
+				//turn on pixel		
+			}
+		}
+		
+		
+		//if rotate column x=A by B, shift column A down B, wrapping
+		
+		//if rotate column y=A by B, shift row A right B, wrapping
+		
+		
+		
+		watch.Stop();		
+	}
+}
