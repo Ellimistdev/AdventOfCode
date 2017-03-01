@@ -23,11 +23,15 @@ public class Program
 
 		, StringSplitOptions.RemoveEmptyEntries);
 		List<string> supportedIPs = new List<string>();
+		List<string> sslIPs = new List<string>();
+		
 		foreach (string line in lines)
 		{
 			Console.WriteLine("@ {0} - line is {1}", watch.Elapsed, line);
 			List<string> hypernetList = new List<string>();
 			List<string> segmentList = new List<string>();
+			List<string> listABA = new List<string>();
+			List<string> listBAB = new List<string>();
 			int substringStart = 0;
 			int substringEnd = 0;
 			int index = 0;
@@ -39,7 +43,7 @@ public class Program
 				{
 					substringEnd = index;
 					//add line.Substring(substringStart, substringEnd) to segmentList
-					Console.WriteLine("@ {0} - segment found: {1} in line {2}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart), line);
+				//	Console.WriteLine("@ {0} - segment found: {1}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart));
 					segmentList.Add(line.Substring(substringStart, substringEnd - substringStart));
 					substringStart = index + 1;
 					index++;
@@ -49,7 +53,7 @@ public class Program
 				{
 					substringEnd = index;
 					//add line.Substring(substringStart, substringEnd - substringStart) to hypernetList
-					Console.WriteLine("@ {0} - hypernet found: {1} in line {2}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart), line);
+				//	Console.WriteLine("@ {0} - hypernet found: {1}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart));
 					hypernetList.Add(line.Substring(substringStart, substringEnd - substringStart));
 					substringStart = index + 1;
 					index++;
@@ -58,7 +62,7 @@ public class Program
 				{
 					//+1 to get final char
 					substringEnd = index + 1;
-					Console.WriteLine("@ {0} - segment found: {1} in line {2}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart), line);
+				//	Console.WriteLine("@ {0} - segment found: {1}", watch.Elapsed, line.Substring(substringStart, substringEnd - substringStart));
 					segmentList.Add(line.Substring(substringStart, substringEnd - substringStart));
 					//reached the end of the line, move on
 					break;
@@ -69,13 +73,14 @@ public class Program
 				}
 			}
 
-			Console.WriteLine("@ {0} - segmentList: {1} hypernetList: {2}", watch.Elapsed, segmentList.Count, hypernetList.Count);
+			//Console.WriteLine("@ {0} - segmentList: {1} hypernetList: {2}", watch.Elapsed, segmentList.Count, hypernetList.Count);
 			bool hypernetIsABBA = false;
 			bool hypernetIsBAB = false;
 			//test negative case first
 			foreach (string hypernet in hypernetList)
 			{
 				hypernetIsABBA = (stringIsABBA(hypernet.ToCharArray(), watch));
+				hypernetIsBAB = (stringIsABA(hypernet.ToCharArray(), watch, ref listBAB));
 				if (hypernetIsABBA)
 				{
 					Console.WriteLine("@ {0} - hypernet {1} Is ABBA, IP {2} does not support TLS", watch.Elapsed, hypernet, line);
@@ -87,19 +92,18 @@ public class Program
 			if (hypernetIsABBA)
 			{
 				Console.WriteLine("@ {0} - a hypernet Is ABBA, IP {1} does not support TLS", watch.Elapsed, line);
-				continue;
+				//continuing does not check for SSL ?
+				//continue;
 			}
-
-			Console.WriteLine("@ {0} - if hypernetIsAbba == true, this should not appear. hypernetIsAbba == {1}", watch.Elapsed, hypernetIsABBA);
+			
 			Console.WriteLine("@ {0} - hypernetList.Count {1} complete, moving on", watch.Elapsed, hypernetList.Count);
 			//test positive case
 			bool segmentIsABBA = false;
 			bool segmentIsABA = false;
-			List<string> listABA = new List<string>();
 			foreach (string segment in segmentList)
 			{
 				segmentIsABBA = (stringIsABBA(segment.ToCharArray(), watch));
-				segmentIsABA = (stringIsABA(segment.ToCharArray(), watch, listABA));
+				segmentIsABA = (stringIsABA(segment.ToCharArray(), watch, ref listABA));
 				if (segmentIsABBA)
 				{
 					Console.WriteLine("@ {0} - segment {1} Is Abba, IP {2} supports TLS", watch.Elapsed, segment, line);
@@ -113,14 +117,59 @@ public class Program
 				Console.WriteLine("@ {0} - Reached end of Abba check, IP does not support TLS", watch.Elapsed);
 			}
 
+			Console.WriteLine("@ {0} - listABA count: {1}",watch.Elapsed, listABA.Count);
+			Console.WriteLine("@ {0} - listBAB count: {1}",watch.Elapsed, listBAB.Count);
+			
+			//if both lists have entries, continue SSL detection process
+			if (listABA.Count > 0 && listBAB.Count > 0)
+			{
+				Console.WriteLine("@ {0} - Lists have entries, begin conversion", watch.Elapsed);
+				//convert entries in listABA
+				List<string> convertedABA = convertABA(listABA);
+				//compare entries
+				foreach (string entry in convertedABA)
+				{
+					Console.WriteLine("@ {0} - Entry: {1}, comparing", watch.Elapsed, entry);
+					if (listBAB.Contains(entry))
+					{
+						Console.WriteLine("@ {0} - Entry: {1}, comparing found", watch.Elapsed, entry);
+						sslIPs.Add(line);
+						Console.WriteLine("@ {0} - IPs supporting SSL: {1}", watch.Elapsed, sslIPs.Count);
+						break;
+					}
+				}
+			
+				
+			}
 			Console.WriteLine("@ {0} - Moving to next line", watch.Elapsed);
 		}
-
+		Console.WriteLine("@ {0} - IPs supporting SSL: {1}", watch.Elapsed, sslIPs.Count);
 		Console.WriteLine("@ {0} - IPs supporting TLS: {1}", watch.Elapsed, supportedIPs.Count);
 		Console.WriteLine("@ {0} - End program", watch.Elapsed);
 		watch.Stop();
 	}
-
+	public static List<string> convertABA(List<string> listABA)
+	{
+		List<string> convertedList = new List<string>();
+		
+		foreach (string entry in listABA)
+		{
+			char[] charEntry = entry.ToCharArray();
+			//shift chars
+			charEntry[0] = charEntry[1];
+			charEntry[1] = charEntry[2];
+			charEntry[2] = charEntry[0];
+			//convert to string
+			string convertedEntry = new string(charEntry);
+			convertedList.Add(convertedEntry);
+			Console.WriteLine("Entry: {0}, Converted: {1}", entry, convertedEntry);	
+		}
+		
+		
+		return convertedList;
+		
+	}
+	
 	//for a 4 element char array, determine whether it is a palindrome
 	public static bool charSetIsABBA(char[] chars)
 	{
@@ -157,7 +206,7 @@ public class Program
 		return charSet;
 	}
 
-	public static bool stringIsABA(char[] chars, Stopwatch watch, List<string> ABAList)
+	public static bool stringIsABA(char[] chars, Stopwatch watch, ref List<string> sslList)
 	{
 		bool status = false;
 		int index = 0;
@@ -169,11 +218,13 @@ public class Program
 			{
 				Console.WriteLine("@ {0} - {1}{2}{3} isAba - continuing", watch.Elapsed, testArray[0], testArray[1], testArray[2]);
 				status = true;
-				ABAList.Add(new string (testArray));
-				continue;
+				sslList.Add(new string (testArray));
+				Console.WriteLine("@ {0} - list.Count: {1}",watch.Elapsed, sslList.Count);
 			}
-
-			Console.WriteLine("@ {0} - {1}{2}{3} not Aba - index ++", watch.Elapsed, testArray[0], testArray[1], testArray[2]);
+			else
+			{
+				//Console.WriteLine("@ {0} - {1}{2}{3} not Aba - index ++", watch.Elapsed, testArray[0], testArray[1], testArray[2]);
+			}
 			index++;
 		}
 
@@ -195,8 +246,11 @@ public class Program
 				return status;
 			}
 
-			Console.WriteLine("@ {0} - {1}{2}{3}{4}  not Abba - index ++", watch.Elapsed, testArray[0], testArray[1], testArray[2], testArray[3]);
-			index++;
+			else
+			{
+				//Console.WriteLine("@ {0} - {1}{2}{3}{4}  not Abba - index ++", watch.Elapsed, testArray[0], testArray[1], testArray[2], testArray[3]);
+				index++;
+			}
 		}
 
 		return status;
