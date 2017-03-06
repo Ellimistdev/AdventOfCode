@@ -15,47 +15,69 @@ public class Program
 		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2016d9");
 		StreamReader reader = new StreamReader(stream);
 		string content = reader.ReadToEnd();
-		if (tests())
+		if (tests(watch))
 		{
-			Console.WriteLine("Tests passed - continuing");
+			Console.WriteLine("@ {0} - Tests passed - continuing",watch.Elapsed);
 		}
 		else
 		{
-			Console.WriteLine("Tests failed - revisit logic");
+			Console.WriteLine("@ {0} - Tests failed - revisit logic",watch.Elapsed);
 		}
 
+		string decompString = decompressString(content);
+		Console.WriteLine(decompString.Length);
 		watch.Stop();
 	}
 
 	//can't use unit tests in online compilers :(
-	public static bool tests()
+	public static bool tests(Stopwatch watch)
 	{
-		// should decompress to "ADVENT" with length 6
+		//should decompress to "ADVENT" with length 6
 		string clear = "ADVENT";
 		string whitespace = "A D V E N T";
 		string clear_whitePass = "ADVENT";
-		// should decompress to "ABBBBBC" with length 7
+		//should decompress to "ABBBBBC" with length 7
 		string single = "A(1x5)BC";
 		string singlePass = "ABBBBBC";
-		// should decompress to "XYZXYZXYZ" with length 9
+		//should decompress to "XYZXYZXYZ" with length 9
 		string multiple = "(3x3)XYZ";
 		string multiplePass = "XYZXYZXYZ";
-		// should decompress to "ABCBCDEFEFG" with length 11
+		//should decompress to "ABCBCDEFEFG" with length 11
 		string doubles = "A(2x2)BCD(2x2)EFG";
 		string doublesPass = "ABCBCDEFEFG";
-		// should decompress to "(1x3)A" with length 6
+		//should decompress to "(1x3)A" with length 6
 		string overlap = "(6x1)(1x3)A";
 		string overlapPass = "(1x3)A";
-		// should decompress to "X(3x3)ABC(3x3)ABCY" with length 18
+		//should decompress to "X(3x3)ABC(3x3)ABCY" with length 18
 		string overlapMulti = "X(8x2)(3x3)ABCY";
-		string overlapMultiPass = "X(3x3)ABC(3x3)ABCY";
-		// should decompress to "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY" with a length x
+		string overlapMultiPass = "X(3x3)ABC(3x3)ABCY";		
+		//should decompress to "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY" with length 63
 		string all = "ADVENTA D V E N TA(1x5)BC(3x3)XYZA(2x2)BCD(2x2)EFG(6x1)(1x3)AX(8x2)(3x3)ABCY";
 		string allPass = "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY";
 		string[] tests = new string[]{clear, whitespace, single, multiple, doubles, overlap, overlapMulti, all};
+		string[] acceptedPass = new string []{clear_whitePass, clear_whitePass, singlePass, multiplePass, doublesPass, overlapPass, overlapMultiPass, allPass};
+		
+		Console.WriteLine("@ {0} - Beginning Tests", watch.Elapsed);
+		Console.WriteLine("----------------------------------------------");
+		
 		foreach (string test in tests)
 		{
-			//need to pass input to the rest of the logic
+			int i = Array.IndexOf(tests,test);
+			string decompressed = decompressString(test);
+			
+			if (decompressed != acceptedPass[i])
+			{				
+				return false;
+			}
+			
+			
+		}
+		Console.WriteLine("----------------------------------------------");
+		return true;
+	}
+	public static string decompressString(string test)
+	{
+		
 			string input = RemoveWhitespace(test);
 			int index = 0;
 			int instructionPos;
@@ -63,14 +85,15 @@ public class Program
 			int repeater = 0;
 			string output = "";
 			instructionPos = input.IndexOf('x');
-			Console.WriteLine("line: {0} input: {1} instructionPos: {2}", test, input, instructionPos);
+		
+			//Console.WriteLine("IN: {0}",test);
 			//handle no instructions
 			if (instructionPos < 0)
 			{
 				output = input;
 				Console.WriteLine("No instruction, - continuing");
-				Console.WriteLine("OUT: {0}", output);
-				continue;
+				//Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
+				return output;
 			}
 
 			//process instruction
@@ -84,35 +107,27 @@ public class Program
 
 			while (index != input.Length - 1)
 			{
-				//Console.WriteLine("input.Length {0}",input.Length);
-				//Console.WriteLine("index {0}",index);
-				//Console.WriteLine("instructionPos {0}",instructionPos);
 				output += ProcessInstruction(breaker, instructionPos, input, ref repeater, ref selector, ref index);
-				Console.WriteLine(output);
-				if (nextInstructionPresent(index, input, ref instructionPos))
+				
+				if ((index+selector) < input.Length && nextInstructionPresent(index, input, ref instructionPos,selector)) 
 				{
-					Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
+					//Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
 					continue;
 				}
 				else
 				{
-					Console.WriteLine("No Instruction Present - appending remainder of string");
+					//Console.WriteLine("No Instruction Present - appending remainder of string");
 					//skip over selection already processed
 					index = index + selector;
 					output += ProcessRemainingInput(input, index);
 					break;
 				}
-			//need to break if no instructions
 			}
-
-			//TODO: continue processing string after first instruction is complete
+			
 			//if no instruction, return string and length
-			Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
-		}
-
-		return true;
+			//Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
+			return output;
 	}
-
 	public static string ProcessRemainingInput(string input, int index)
 	{
 		string output = "";
@@ -131,15 +146,16 @@ public class Program
 		string repeaterString = "";
 		int interimIndex = 0;
 		int repeatCount = 0;
+		
 		//create interimIndex if we're on the 2nd or greater instruction
-		Console.WriteLine("index + selector == {0} + {1} == {2}, instructionPos == {3}", index, selector, index + selector, instructionPos);
 		if (index + selector > 0 && index + selector != instructionPos)
 		{
 			interimIndex = index + selector;
 		}
 
+		//set index to known value
 		index = instructionPos;
-		Console.WriteLine("index {0}", index);
+		
 		//from 'x', iterate backwards to reach '(' 
 		while (input[index] != breaker)
 		{
@@ -162,16 +178,14 @@ public class Program
 		}
 
 		//assign selector
-		//Console.WriteLine("index is: {0}",index);
-		//Console.WriteLine(selectorString);
-		//Console.WriteLine("hit");
 		selector = int.Parse(selectorString);
-		Console.WriteLine("selector == {0}", selectorString);
+		
 		//assign breaker
 		breaker = ')';
-		//Console.WriteLine("index was: {0}",index);
+		
+		//set index to known value
 		index = instructionPos;
-		//Console.WriteLine("index is: {0}",index);
+		
 		//from 'x', interate forwards to reach ')'
 		while (input[index] != breaker)
 		{
@@ -185,37 +199,32 @@ public class Program
 		}
 
 		repeater = int.Parse(repeaterString);
-		Console.WriteLine("repeater == {0}", repeaterString);
+		
 		//set index to breaker + 
-		//Console.WriteLine("index was: {0}",index);
 		index++;
-		//index = input.IndexOf(breaker) + 1;
-		//Console.WriteLine("index is: {0}",index);
+		
 		//execute instruction
 		while (repeatCount < repeater)
 		{
 			for (int i = 0; i < selector; i++)
 			{
-				Console.WriteLine("i: {0} index: {1} repeatCount: {2} input[index]: {3}", i, index, repeatCount, input[index + i]);
 				output += input[index + i];
 			}
 
 			repeatCount++;
 		}
 
-		Console.WriteLine("Exiting ProcessInstruction, index is {0}", index);
+		//Console.WriteLine("Exiting ProcessInstruction, index is {0}", index);
 		return output;
 	}
 
 	//sets the position of the next instruction if it exsists
-	public static bool nextInstructionPresent(int index, string input, ref int instructionPos)
+	public static bool nextInstructionPresent(int index, string input, ref int instructionPos,int selector)
 	{
-		int i = index;
+		int i = index + selector;
 		bool present = false;
 		while (input[i] != 'x' && i != input.Length - 1)
 		{
-			Console.WriteLine("input.Length {0}", input.Length);
-			Console.WriteLine("index {0}", index);
 			i++;
 		}
 
@@ -223,10 +232,10 @@ public class Program
 		{
 			present = true;
 			instructionPos = i;
-			Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
+			//Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
 		}
 
-		Console.WriteLine("Exiting nextInstructionPresent, index is {0}, instructionPos is {1}", index, instructionPos);
+		//Console.WriteLine("Exiting nextInstructionPresent, index is {0}, instructionPos is {1}", index, instructionPos);
 		return present;
 	}
 
