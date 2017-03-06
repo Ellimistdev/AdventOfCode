@@ -1,0 +1,154 @@
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.IO;
+using System.Linq;
+					
+public class Program
+{
+	public static void Main()
+	{
+		Stopwatch watch = new Stopwatch();
+		watch.Start();
+		
+		//readfile
+		WebClient client = new WebClient();
+		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2016d9");
+		StreamReader reader = new StreamReader(stream);
+		string content = reader.ReadToEnd();		
+		
+		if (tests())
+		{
+			Console.WriteLine("Tests passed - continuing");
+		}
+		else
+		{
+			Console.WriteLine("Tests failed - revisit logic");					
+		}
+		
+		watch.Stop();		
+	}
+	
+	
+	public static bool tests()
+	{
+		// should decompress to "ADVENT" with length 6
+		string clear = "ADVENT";		
+		string whitespace = "A D V E N T";
+		// should decompress to "ABBBBBC" with length 7
+		string single = "A(1x5)BC";
+		// should decompress to "XYZXYZXYZ" with length 9
+		string multiple = "(3x3)XYZ";
+		// should decompress to "ABCBCDEFEFG" with length 11
+		string doubles = "A(2x2)BCD(2x2)EFG";
+		// should decompress to "(1x3)A" with length 6
+		string overlap = "(6x1)(1x3)A";
+		// should decompress to "X(3x3)ABC(3x3)ABCY" with length 18
+		string overlapMulti = "X(8x2)(3x3)ABCY";
+		// should decompress to "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY" with a length x
+		string all = "ADVENTA D V E N TA(1x5)BC(3x3)XYZA(2x2)BCD(2x2)EFG(6x1)(1x3)AX(8x2)(3x3)ABCY";
+		
+		string[] tests = new string[] {clear,whitespace,single,multiple,doubles,overlap,overlapMulti,all};
+		
+		foreach (string test in tests)
+		{
+			//need to pass input to the rest of the logic
+			string input = RemoveWhitespace(test);
+			
+			int index = 0;
+			int instructionPos;
+			int selector;
+			int repeater;
+			string output = "";
+			
+			instructionPos = test.IndexOf('x');
+			Console.WriteLine("line: {0} input: {1} instructionPos: {2}",test, input, instructionPos);
+			if (instructionPos <0)
+			{
+				output = input;
+				Console.WriteLine("No instruction, - continuing");	
+				Console.WriteLine("OUT: {0}",output);
+				continue;
+			}
+			
+			char breaker = '(';
+			index = instructionPos;
+			
+			//get leading chars
+			if (test.IndexOf(breaker) != 0)
+			{
+				for (int i = 0; i < test.IndexOf(breaker); i++)
+				output += test[i];	
+			}
+			
+			
+			//from 'x', iterate backwards to reach '(' 
+			while (test[index] != breaker)
+			{
+				index--;
+			}
+			
+			string selectorString = "";
+			//from '(' create string from chars
+			for (int i = index + 1; i < instructionPos; i++)
+				{
+					selectorString += test[i];
+				}
+			//assign selector
+			selector = int.Parse(selectorString);
+			Console.WriteLine("selector == {0}",selectorString);
+			
+			breaker = ')';
+			index = instructionPos;
+			
+			//from 'x', interate forwards to reach ')'
+			while (test[index] != breaker)
+				{
+					index++;
+				}
+			
+			string repeaterString = "";
+			//from '(' create string from chars
+			for (int i = instructionPos + 1; i < index; i++)
+				{
+					repeaterString += test[i];
+					Console.WriteLine(test[i]);
+				}
+			repeater = int.Parse(repeaterString);
+			Console.WriteLine("repeater == {0}",repeaterString);
+			
+					
+			//set index to breaker + 1
+			index = test.IndexOf(breaker) + 1;
+			int repeatCount = 0;
+			
+			//execute instruction
+			while (repeatCount < repeater)
+			{			
+				for (int i = 0; i < selector; i++)
+				{
+					Console.WriteLine("i: {0} index: {1} repeatCount: {2} test[index]: {3}",i, index, repeatCount, test[index + i]);					
+					output += test[index + i];
+				}
+				repeatCount++;
+			}
+			
+			//TODO: continue processing string after first instruction is complete
+			
+			//if no instruction, return string and length
+			Console.WriteLine("OUT: {0} - LENGTH: {1}",output, output.Length);
+			
+		}
+			
+			
+		
+		return true;
+	}
+	public static string RemoveWhitespace(string input)
+	 {
+		return new string(input.ToCharArray()
+			.Where(c => !Char.IsWhiteSpace(c))
+			.ToArray());
+	 }
+	
+}
