@@ -3,152 +3,235 @@ using System.Diagnostics;
 using System.Net;
 using System.IO;
 using System.Linq;
-					
+
 public class Program
 {
 	public static void Main()
 	{
 		Stopwatch watch = new Stopwatch();
 		watch.Start();
-		
 		//readfile
 		WebClient client = new WebClient();
 		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2016d9");
 		StreamReader reader = new StreamReader(stream);
-		string content = reader.ReadToEnd();		
-		
+		string content = reader.ReadToEnd();
 		if (tests())
 		{
 			Console.WriteLine("Tests passed - continuing");
 		}
 		else
 		{
-			Console.WriteLine("Tests failed - revisit logic");					
+			Console.WriteLine("Tests failed - revisit logic");
 		}
-		
-		watch.Stop();		
+
+		watch.Stop();
 	}
-	
-	
+
+	//can't use unit tests in online compilers :(
 	public static bool tests()
 	{
 		// should decompress to "ADVENT" with length 6
-		string clear = "ADVENT";		
+		string clear = "ADVENT";
 		string whitespace = "A D V E N T";
+		string clear_whitePass = "ADVENT";
 		// should decompress to "ABBBBBC" with length 7
 		string single = "A(1x5)BC";
+		string singlePass = "ABBBBBC";
 		// should decompress to "XYZXYZXYZ" with length 9
 		string multiple = "(3x3)XYZ";
+		string multiplePass = "XYZXYZXYZ";
 		// should decompress to "ABCBCDEFEFG" with length 11
 		string doubles = "A(2x2)BCD(2x2)EFG";
+		string doublesPass = "ABCBCDEFEFG";
 		// should decompress to "(1x3)A" with length 6
 		string overlap = "(6x1)(1x3)A";
+		string overlapPass = "(1x3)A";
 		// should decompress to "X(3x3)ABC(3x3)ABCY" with length 18
 		string overlapMulti = "X(8x2)(3x3)ABCY";
+		string overlapMultiPass = "X(3x3)ABC(3x3)ABCY";
 		// should decompress to "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY" with a length x
 		string all = "ADVENTA D V E N TA(1x5)BC(3x3)XYZA(2x2)BCD(2x2)EFG(6x1)(1x3)AX(8x2)(3x3)ABCY";
-		
-		string[] tests = new string[] {clear,whitespace,single,multiple,doubles,overlap,overlapMulti,all};
-		
+		string allPass = "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY";
+		string[] tests = new string[]{clear, whitespace, single, multiple, doubles, overlap, overlapMulti, all};
 		foreach (string test in tests)
 		{
 			//need to pass input to the rest of the logic
 			string input = RemoveWhitespace(test);
-			
 			int index = 0;
 			int instructionPos;
-			int selector;
-			int repeater;
+			int selector = 0;
+			int repeater = 0;
 			string output = "";
-			
-			instructionPos = test.IndexOf('x');
-			Console.WriteLine("line: {0} input: {1} instructionPos: {2}",test, input, instructionPos);
-			if (instructionPos <0)
+			instructionPos = input.IndexOf('x');
+			Console.WriteLine("line: {0} input: {1} instructionPos: {2}", test, input, instructionPos);
+			//handle no instructions
+			if (instructionPos < 0)
 			{
 				output = input;
-				Console.WriteLine("No instruction, - continuing");	
-				Console.WriteLine("OUT: {0}",output);
+				Console.WriteLine("No instruction, - continuing");
+				Console.WriteLine("OUT: {0}", output);
 				continue;
 			}
-			
+
+			//process instruction
 			char breaker = '(';
-			index = instructionPos;
-			
 			//get leading chars
-			if (test.IndexOf(breaker) != 0)
+			if (input.IndexOf(breaker) != 0)
 			{
-				for (int i = 0; i < test.IndexOf(breaker); i++)
-				output += test[i];	
+				for (int i = 0; i < input.IndexOf(breaker); i++)
+					output += input[i];
 			}
-			
-			
-			//from 'x', iterate backwards to reach '(' 
-			while (test[index] != breaker)
+
+			while (index != input.Length - 1)
 			{
-				index--;
+				//Console.WriteLine("input.Length {0}",input.Length);
+				//Console.WriteLine("index {0}",index);
+				//Console.WriteLine("instructionPos {0}",instructionPos);
+				output += ProcessInstruction(breaker, instructionPos, input, ref repeater, ref selector, ref index);
+				Console.WriteLine(output);
+				if (nextInstructionPresent(index, input, ref instructionPos))
+				{
+					Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
+					continue;
+				}
+				else
+				{
+					Console.WriteLine("No Instruction Present - appending remainder of string");
+					//skip over selection already processed
+					index = index + selector;
+					output += ProcessRemainingInput(input, index);
+					break;
+				}
+			//need to break if no instructions
 			}
-			
-			string selectorString = "";
-			//from '(' create string from chars
-			for (int i = index + 1; i < instructionPos; i++)
-				{
-					selectorString += test[i];
-				}
-			//assign selector
-			selector = int.Parse(selectorString);
-			Console.WriteLine("selector == {0}",selectorString);
-			
-			breaker = ')';
-			index = instructionPos;
-			
-			//from 'x', interate forwards to reach ')'
-			while (test[index] != breaker)
-				{
-					index++;
-				}
-			
-			string repeaterString = "";
-			//from '(' create string from chars
-			for (int i = instructionPos + 1; i < index; i++)
-				{
-					repeaterString += test[i];
-					Console.WriteLine(test[i]);
-				}
-			repeater = int.Parse(repeaterString);
-			Console.WriteLine("repeater == {0}",repeaterString);
-			
-					
-			//set index to breaker + 1
-			index = test.IndexOf(breaker) + 1;
-			int repeatCount = 0;
-			
-			//execute instruction
-			while (repeatCount < repeater)
-			{			
-				for (int i = 0; i < selector; i++)
-				{
-					Console.WriteLine("i: {0} index: {1} repeatCount: {2} test[index]: {3}",i, index, repeatCount, test[index + i]);					
-					output += test[index + i];
-				}
-				repeatCount++;
-			}
-			
+
 			//TODO: continue processing string after first instruction is complete
-			
 			//if no instruction, return string and length
-			Console.WriteLine("OUT: {0} - LENGTH: {1}",output, output.Length);
-			
+			Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
 		}
-			
-			
-		
+
 		return true;
 	}
+
+	public static string ProcessRemainingInput(string input, int index)
+	{
+		string output = "";
+		for (int i = index; i < input.Length; i++)
+		{
+			output += input[i];
+		}
+
+		return output;
+	}
+
+	public static string ProcessInstruction(char breaker, int instructionPos, string input, ref int repeater, ref int selector, ref int index)
+	{
+		string output = "";
+		string selectorString = "";
+		string repeaterString = "";
+		int interimIndex = 0;
+		int repeatCount = 0;
+		//create interimIndex if we're on the 2nd or greater instruction
+		Console.WriteLine("index + selector == {0} + {1} == {2}, instructionPos == {3}", index, selector, index + selector, instructionPos);
+		if (index + selector > 0 && index + selector != instructionPos)
+		{
+			interimIndex = index + selector;
+		}
+
+		index = instructionPos;
+		Console.WriteLine("index {0}", index);
+		//from 'x', iterate backwards to reach '(' 
+		while (input[index] != breaker)
+		{
+			index--;
+		}
+
+		//prepend interim chars to output
+		if (interimIndex > 0)
+		{
+			for (int i = interimIndex; i < index; i++)
+			{
+				output += input[i];
+			}
+		}
+
+		//from '(' create string from chars
+		for (int i = index + 1; i < instructionPos; i++)
+		{
+			selectorString += input[i];
+		}
+
+		//assign selector
+		//Console.WriteLine("index is: {0}",index);
+		//Console.WriteLine(selectorString);
+		//Console.WriteLine("hit");
+		selector = int.Parse(selectorString);
+		Console.WriteLine("selector == {0}", selectorString);
+		//assign breaker
+		breaker = ')';
+		//Console.WriteLine("index was: {0}",index);
+		index = instructionPos;
+		//Console.WriteLine("index is: {0}",index);
+		//from 'x', interate forwards to reach ')'
+		while (input[index] != breaker)
+		{
+			index++;
+		}
+
+		//from '(' create string from chars
+		for (int i = instructionPos + 1; i < index; i++)
+		{
+			repeaterString += input[i];
+		}
+
+		repeater = int.Parse(repeaterString);
+		Console.WriteLine("repeater == {0}", repeaterString);
+		//set index to breaker + 
+		//Console.WriteLine("index was: {0}",index);
+		index++;
+		//index = input.IndexOf(breaker) + 1;
+		//Console.WriteLine("index is: {0}",index);
+		//execute instruction
+		while (repeatCount < repeater)
+		{
+			for (int i = 0; i < selector; i++)
+			{
+				Console.WriteLine("i: {0} index: {1} repeatCount: {2} input[index]: {3}", i, index, repeatCount, input[index + i]);
+				output += input[index + i];
+			}
+
+			repeatCount++;
+		}
+
+		Console.WriteLine("Exiting ProcessInstruction, index is {0}", index);
+		return output;
+	}
+
+	//sets the position of the next instruction if it exsists
+	public static bool nextInstructionPresent(int index, string input, ref int instructionPos)
+	{
+		int i = index;
+		bool present = false;
+		while (input[i] != 'x' && i != input.Length - 1)
+		{
+			Console.WriteLine("input.Length {0}", input.Length);
+			Console.WriteLine("index {0}", index);
+			i++;
+		}
+
+		if (input[i] == 'x')
+		{
+			present = true;
+			instructionPos = i;
+			Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
+		}
+
+		Console.WriteLine("Exiting nextInstructionPresent, index is {0}, instructionPos is {1}", index, instructionPos);
+		return present;
+	}
+
 	public static string RemoveWhitespace(string input)
-	 {
-		return new string(input.ToCharArray()
-			.Where(c => !Char.IsWhiteSpace(c))
-			.ToArray());
-	 }
-	
+	{
+		return new string (input.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
+	}
 }
