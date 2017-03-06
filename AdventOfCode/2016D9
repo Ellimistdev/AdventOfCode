@@ -17,117 +17,208 @@ public class Program
 		string content = reader.ReadToEnd();
 		if (tests(watch))
 		{
-			Console.WriteLine("@ {0} - Tests passed - continuing",watch.Elapsed);
+			Console.WriteLine("@ {0} - Tests passed - continuing", watch.Elapsed);
 		}
 		else
 		{
-			Console.WriteLine("@ {0} - Tests failed - revisit logic",watch.Elapsed);
+			Console.WriteLine("@ {0} - Tests failed - revisit logic", watch.Elapsed);
 		}
 
 		string decompString = decompressString(content);
-		Console.WriteLine(decompString.Length);
+		Console.WriteLine("@ {0} - 1st Pass Length == {1}", watch.Elapsed, decompString.Length);
+		//dies - don't do it this way
+		//string passTwo = decompressString(decompString);
+		//Console.WriteLine("@ {0} - 2nd Pass Length == {1}",watch.Elapsed,passTwo.Length);
+		//string passThree = decompressString(passTwo);
+		//Console.WriteLine("@ {0} - 3rd Pass Length == {1}",watch.Elapsed,passThree.Length);
+		//string passFour = decompressString(passThree);
+		//Console.WriteLine("@ {0} - 4th Pass Length == {1}",watch.Elapsed,passFour.Length);
 		watch.Stop();
 	}
 
 	//can't use unit tests in online compilers :(
 	public static bool tests(Stopwatch watch)
 	{
-		//should decompress to "ADVENT" with length 6
 		string clear = "ADVENT";
 		string whitespace = "A D V E N T";
 		string clear_whitePass = "ADVENT";
-		//should decompress to "ABBBBBC" with length 7
 		string single = "A(1x5)BC";
 		string singlePass = "ABBBBBC";
-		//should decompress to "XYZXYZXYZ" with length 9
 		string multiple = "(3x3)XYZ";
 		string multiplePass = "XYZXYZXYZ";
-		//should decompress to "ABCBCDEFEFG" with length 11
 		string doubles = "A(2x2)BCD(2x2)EFG";
 		string doublesPass = "ABCBCDEFEFG";
-		//should decompress to "(1x3)A" with length 6
 		string overlap = "(6x1)(1x3)A";
 		string overlapPass = "(1x3)A";
-		//should decompress to "X(3x3)ABC(3x3)ABCY" with length 18
 		string overlapMulti = "X(8x2)(3x3)ABCY";
-		string overlapMultiPass = "X(3x3)ABC(3x3)ABCY";		
-		//should decompress to "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY" with length 63
+		string overlapMultiPass = "X(3x3)ABC(3x3)ABCY";
 		string all = "ADVENTA D V E N TA(1x5)BC(3x3)XYZA(2x2)BCD(2x2)EFG(6x1)(1x3)AX(8x2)(3x3)ABCY";
 		string allPass = "ADVENTADVENTABBBBBCXYZXYZXYZABCBCDEFEFG(1x3)AX(3x3)ABC(3x3)ABCY";
+		//test fully decomp length method
+		string lengthTest = "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN";
+		string lengthTestLong = "(27x12)(20x12)(13x14)(7x10)(1x12)A";
+		int lengthTestLength = 445;
+		int lengthTestLongLength = 241920;
 		string[] tests = new string[]{clear, whitespace, single, multiple, doubles, overlap, overlapMulti, all};
-		string[] acceptedPass = new string []{clear_whitePass, clear_whitePass, singlePass, multiplePass, doublesPass, overlapPass, overlapMultiPass, allPass};
-		
+		string[] acceptedPass = new string[]{clear_whitePass, clear_whitePass, singlePass, multiplePass, doublesPass, overlapPass, overlapMultiPass, allPass};
+		string[] lengthTests = new string[]{lengthTest, lengthTestLong};
+		int[] lengthTestsPass = new int[]{lengthTestLength, lengthTestLongLength};
 		Console.WriteLine("@ {0} - Beginning Tests", watch.Elapsed);
 		Console.WriteLine("----------------------------------------------");
-		
 		foreach (string test in tests)
 		{
-			int i = Array.IndexOf(tests,test);
+			int i = Array.IndexOf(tests, test);
 			string decompressed = decompressString(test);
-			
+			//do a 2nd pass on short test strings to get expected lengths
+			int fullyDecompLength = decompressString(decompressed).Length;
+			int decompressedLength = getDecompressedLength(test);
 			if (decompressed != acceptedPass[i])
-			{				
+			{
 				return false;
 			}
-			
-			
+
+			//compare fully decompressed length gathered via brute force vs length gathered via algorithm
+			if (decompressedLength != fullyDecompLength)
+			{
+			//return false;	
+			}
 		}
+
+		//test lengths gathered via algorithm to known values
+		foreach (string test in lengthTests)
+		{
+			int i = Array.IndexOf(lengthTests, test);
+			int decompressedLength = getDecompressedLength(test);
+			if (decompressedLength != lengthTestsPass[i])
+			{
+			//return false;	
+			}
+		}
+
 		Console.WriteLine("----------------------------------------------");
 		return true;
 	}
+
+	public static int getDecompressedLength(string test)
+	{
+		int length = 0;
+		int index = 0;
+		int segmentStart;
+		int segmentEnd;
+		int segmentLength;
+		/*
+		To get the length of a further decompressed string, expand those instructions that fall within other instructions.
+		This, however, is too memory intensive, so we must figure out the patterns therein.
+		
+		ASSUMING
+		(WxX)(AxB)stringOne(CxD)stringTwo(ExF)stringThree(YxZ)(GxH)...
+		W will always equal (AxB)stringOne(CxD)stringTwo(ExF)stringThree.Length
+		A will always equal stringOne.Length
+		C will always equal stringTwo.Length
+		E will always equal stringThree.Length
+		So (WxX) should be equivalent to (((A * B) + (C * D) + (E * F)) * X) 
+		
+		TEST
+		(21x2)(1x2)A(2x2)BC(3x3)DEF(15x35)(2x2)
+		working with: 
+		(21x2)(1x2)A(2x2)BC(3x3)DEF
+		Expanded length of working segment should be == (1*2 + 2*2 + 3*3) * 2 == 30
+		Expands to 
+		(1x2)A(2x2)BC(3x3)DEF(1x2)A(2x2)BC(3x3)DEF
+		AABCBCDEFDEFDEFAABCBCDEFDEFDEF which has length 30
+		
+		TEST
+		(7x5)(1x10)L(28x6)
+		working segment = 7 char from end of (7x5) including the (7x5) instruction == (7x5)(1x10)L
+		Expanded length of working segment should be == ((1*10) * 5) == 50
+		Expands to
+		(7x5)(1x10)L
+		(1x10)L(1x10)L(1x10)L(1x10)L(1x10)L
+		LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL == 50
+		
+	    */
+		//get working segment
+		// instantiate List KeyValuePair<int,int> internalMultipliers
+		// int internalLength = 0;			
+		// find ")("
+		// set segmentStart = index of '(' (not the string.IndexOf() method)
+		// find, set segmentLength 
+		//move backward to find '(', segmentLength == value between '(' and 'x'
+		// find, set segmentMultiple
+		//should be values starting at 'x' + 1, ending at segmentStart - 2
+		// set segmentEnd = (segmentStart + segmentLength)
+		//while index != segmentEnd
+		// move forward from segment start, searching for 'x'
+		// set breaker = '('
+		// move backward from 'x' to breaker
+		// set length = new int (value between breaker and x)
+		// set breaker = ')'
+		// move forward from 'x' to breaker
+		// set multiple = new int (value between breaker and x)
+		// internalMultipliers.Add(length,multiple)
+		//index++;
+		// foreach (KeyValuePair entry in internalMultipliers)
+		// internalLength += (entry.Key * entry.Value);
+		//	
+		//	
+		// segmentLength = (internalLength * segmentMultiple)
+		return length;
+	}
+
 	public static string decompressString(string test)
 	{
-		
-			string input = RemoveWhitespace(test);
-			int index = 0;
-			int instructionPos;
-			int selector = 0;
-			int repeater = 0;
-			string output = "";
-			instructionPos = input.IndexOf('x');
-		
-			//Console.WriteLine("IN: {0}",test);
-			//handle no instructions
-			if (instructionPos < 0)
-			{
-				output = input;
-				Console.WriteLine("No instruction, - continuing");
-				//Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
-				return output;
-			}
-
-			//process instruction
-			char breaker = '(';
-			//get leading chars
-			if (input.IndexOf(breaker) != 0)
-			{
-				for (int i = 0; i < input.IndexOf(breaker); i++)
-					output += input[i];
-			}
-
-			while (index != input.Length - 1)
-			{
-				output += ProcessInstruction(breaker, instructionPos, input, ref repeater, ref selector, ref index);
-				
-				if ((index+selector) < input.Length && nextInstructionPresent(index, input, ref instructionPos,selector)) 
-				{
-					//Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
-					continue;
-				}
-				else
-				{
-					//Console.WriteLine("No Instruction Present - appending remainder of string");
-					//skip over selection already processed
-					index = index + selector;
-					output += ProcessRemainingInput(input, index);
-					break;
-				}
-			}
-			
-			//if no instruction, return string and length
-			//Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
+		string input = RemoveWhitespace(test);
+		int index = 0;
+		int instructionPos;
+		int selector = 0;
+		int repeater = 0;
+		string output = "";
+		instructionPos = input.IndexOf('x');
+		//Console.WriteLine("IN: {0}",test);
+		//handle no instructions
+		if (instructionPos < 0)
+		{
+			output = input;
+			Console.WriteLine("No instruction, - continuing");
+			Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
 			return output;
+		}
+
+		//process instruction
+		char breaker = '(';
+		//get leading chars
+		if (input.IndexOf(breaker) != 0)
+		{
+			for (int i = 0; i < input.IndexOf(breaker); i++)
+				output += input[i];
+		}
+
+		//Console.WriteLine(output);
+		while (index != input.Length - 1)
+		{
+			output += ProcessInstruction(breaker, instructionPos, input, ref repeater, ref selector, ref index);
+			//Console.WriteLine(output);
+			if ((index + selector) < input.Length && nextInstructionPresent(index, input, ref instructionPos, selector))
+			{
+				//Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
+				continue;
+			}
+			else
+			{
+				//Console.WriteLine("No Instruction Present - appending remainder of string");
+				//skip over selection already processed
+				index = index + selector;
+				output += ProcessRemainingInput(input, index);
+				//Console.WriteLine(output);
+				break;
+			}
+		}
+
+		//if no instruction, return string and length
+		Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
+		return output;
 	}
+
 	public static string ProcessRemainingInput(string input, int index)
 	{
 		string output = "";
@@ -146,7 +237,6 @@ public class Program
 		string repeaterString = "";
 		int interimIndex = 0;
 		int repeatCount = 0;
-		
 		//create interimIndex if we're on the 2nd or greater instruction
 		if (index + selector > 0 && index + selector != instructionPos)
 		{
@@ -155,7 +245,6 @@ public class Program
 
 		//set index to known value
 		index = instructionPos;
-		
 		//from 'x', iterate backwards to reach '(' 
 		while (input[index] != breaker)
 		{
@@ -179,13 +268,10 @@ public class Program
 
 		//assign selector
 		selector = int.Parse(selectorString);
-		
 		//assign breaker
 		breaker = ')';
-		
 		//set index to known value
 		index = instructionPos;
-		
 		//from 'x', interate forwards to reach ')'
 		while (input[index] != breaker)
 		{
@@ -199,10 +285,8 @@ public class Program
 		}
 
 		repeater = int.Parse(repeaterString);
-		
 		//set index to breaker + 
 		index++;
-		
 		//execute instruction
 		while (repeatCount < repeater)
 		{
@@ -219,7 +303,7 @@ public class Program
 	}
 
 	//sets the position of the next instruction if it exsists
-	public static bool nextInstructionPresent(int index, string input, ref int instructionPos,int selector)
+	public static bool nextInstructionPresent(int index, string input, ref int instructionPos, int selector)
 	{
 		int i = index + selector;
 		bool present = false;
@@ -232,7 +316,7 @@ public class Program
 		{
 			present = true;
 			instructionPos = i;
-			//Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
+		//Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
 		}
 
 		//Console.WriteLine("Exiting nextInstructionPresent, index is {0}, instructionPos is {1}", index, instructionPos);
