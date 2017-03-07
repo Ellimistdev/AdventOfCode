@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 public class Program
 {
@@ -25,6 +26,7 @@ public class Program
 		}
 
 		string decompString = decompressString(content);
+		Console.WriteLine("@ {0} - input Length == {1}", watch.Elapsed, content.Length);
 		Console.WriteLine("@ {0} - 1st Pass Length == {1}", watch.Elapsed, decompString.Length);
 		//dies - don't do it this way
 		//string passTwo = decompressString(decompString);
@@ -101,11 +103,11 @@ public class Program
 
 	public static int getDecompressedLength(string test)
 	{
-		int length = 0;
+		int inputLength = 0;
 		int index = 0;
-		int segmentStart;
-		int segmentEnd;
-		int segmentLength;
+		int segmentStart = 0;
+		int segmentEnd = 0;
+		int outputLength = 0;
 		/*
 		To get the length of a further decompressed string, expand those instructions that fall within other instructions.
 		This, however, is too memory intensive, so we must figure out the patterns therein.
@@ -137,194 +139,203 @@ public class Program
 		LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL == 50
 		
 	    */
-		//get working segment
-		// instantiate List KeyValuePair<int,int> internalMultipliers
-		// int internalLength = 0;			
-		// find ")("
-		// set segmentStart = index of '(' (not the string.IndexOf() method)
-		// find, set segmentLength 
-		//move backward to find '(', segmentLength == value between '(' and 'x'
-		// find, set segmentMultiple
-		//should be values starting at 'x' + 1, ending at segmentStart - 2
-		// set segmentEnd = (segmentStart + segmentLength)
-		//while index != segmentEnd
-		// move forward from segment start, searching for 'x'
-		// set breaker = '('
-		// move backward from 'x' to breaker
-		// set length = new int (value between breaker and x)
-		// set breaker = ')'
-		// move forward from 'x' to breaker
-		// set multiple = new int (value between breaker and x)
-		// internalMultipliers.Add(length,multiple)
-		//index++;
-		// foreach (KeyValuePair entry in internalMultipliers)
-		// internalLength += (entry.Key * entry.Value);
-		//	
-		//	
-		// segmentLength = (internalLength * segmentMultiple)
-		return length;
-	}
-
-	public static string decompressString(string test)
-	{
-		string input = RemoveWhitespace(test);
-		int index = 0;
-		int instructionPos;
-		int selector = 0;
-		int repeater = 0;
-		string output = "";
-		instructionPos = input.IndexOf('x');
-		//Console.WriteLine("IN: {0}",test);
-		//handle no instructions
-		if (instructionPos < 0)
+		while (index < test.Length)
 		{
-			output = input;
-			Console.WriteLine("No instruction, - continuing");
+			//get working segment
+			// instantiate List 
+			List<KeyValuePair<int, int>> internalMultipliers = new List<KeyValuePair<int, int>>();
+			int internalLength = 0;
+			int segmentLength = 0;
+			int segmentMultiple = 0;
+			// find ")("
+			// set segmentStart = index of '(' (not the string.IndexOf() method)
+			// find, set segmentLength 
+			//move backward to find '(', segmentLength == value between '(' and 'x'
+			// find, set segmentMultiple
+			//should be values starting at 'x' + 1, ending at segmentStart - 2
+			// set segmentEnd = (segmentStart + segmentLength)
+			//while index != segmentEnd
+			// move forward from segment start, searching for 'x'
+			// set breaker = '('
+			// move backward from 'x' to breaker
+			// set segmentLength = new int (value between breaker and x)
+			// set breaker = ')'
+			// move forward from 'x' to breaker
+			// set multiple = value between breaker and x
+			segmentMultiple = 0;
+			internalMultipliers.Add(new KeyValuePair<int, int>(segmentLength, segmentMultiple));
+			
+			foreach (KeyValuePair<int, int> entry in internalMultipliers)
+			{
+				internalLength += (entry.Key * entry.Value);							
+			}
+			//now that we don't care about the internal segment lengths, we can reuse this int			
+			segmentLength = (internalLength * segmentMultiple);
+			outputLength += segmentLength;	
+			index++;
+		}
+		return outputLength;
+	}
+		public static string decompressString(string test)
+		{
+			string input = RemoveWhitespace(test);
+			int index = 0;
+			int instructionPos;
+			int selector = 0;
+			int repeater = 0;
+			string output = "";
+			instructionPos = input.IndexOf('x');
+			//Console.WriteLine("IN: {0}",test);
+			//handle no instructions
+			if (instructionPos < 0)
+			{
+				output = input;
+				Console.WriteLine("No instruction, - continuing");
+				Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
+				return output;
+			}
+
+			//process instruction
+			char breaker = '(';
+			//get leading chars
+			if (input.IndexOf(breaker) != 0)
+			{
+				for (int i = 0; i < input.IndexOf(breaker); i++)
+					output += input[i];
+			}
+
+			//Console.WriteLine(output);
+			while (index != input.Length - 1)
+			{
+				output += ProcessInstruction(breaker, instructionPos, input, ref repeater, ref selector, ref index);
+				//Console.WriteLine(output);
+				if ((index + selector) < input.Length && nextInstructionPresent(index, input, ref instructionPos, selector))
+				{
+					//Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
+					continue;
+				}
+				else
+				{
+					//Console.WriteLine("No Instruction Present - appending remainder of string");
+					//skip over selection already processed
+					index = index + selector;
+					output += ProcessRemainingInput(input, index);
+					//Console.WriteLine(output);
+					break;
+				}
+			}
+
+			//if no instruction, return string and length
 			Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
 			return output;
 		}
 
-		//process instruction
-		char breaker = '(';
-		//get leading chars
-		if (input.IndexOf(breaker) != 0)
+		public static string ProcessRemainingInput(string input, int index)
 		{
-			for (int i = 0; i < input.IndexOf(breaker); i++)
-				output += input[i];
-		}
-
-		//Console.WriteLine(output);
-		while (index != input.Length - 1)
-		{
-			output += ProcessInstruction(breaker, instructionPos, input, ref repeater, ref selector, ref index);
-			//Console.WriteLine(output);
-			if ((index + selector) < input.Length && nextInstructionPresent(index, input, ref instructionPos, selector))
-			{
-				//Console.WriteLine("Instruction Present!{0}, {1}", index, instructionPos);
-				continue;
-			}
-			else
-			{
-				//Console.WriteLine("No Instruction Present - appending remainder of string");
-				//skip over selection already processed
-				index = index + selector;
-				output += ProcessRemainingInput(input, index);
-				//Console.WriteLine(output);
-				break;
-			}
-		}
-
-		//if no instruction, return string and length
-		Console.WriteLine("OUT: {0} - LENGTH: {1}", output, output.Length);
-		return output;
-	}
-
-	public static string ProcessRemainingInput(string input, int index)
-	{
-		string output = "";
-		for (int i = index; i < input.Length; i++)
-		{
-			output += input[i];
-		}
-
-		return output;
-	}
-
-	public static string ProcessInstruction(char breaker, int instructionPos, string input, ref int repeater, ref int selector, ref int index)
-	{
-		string output = "";
-		string selectorString = "";
-		string repeaterString = "";
-		int interimIndex = 0;
-		int repeatCount = 0;
-		//create interimIndex if we're on the 2nd or greater instruction
-		if (index + selector > 0 && index + selector != instructionPos)
-		{
-			interimIndex = index + selector;
-		}
-
-		//set index to known value
-		index = instructionPos;
-		//from 'x', iterate backwards to reach '(' 
-		while (input[index] != breaker)
-		{
-			index--;
-		}
-
-		//prepend interim chars to output
-		if (interimIndex > 0)
-		{
-			for (int i = interimIndex; i < index; i++)
+			string output = "";
+			for (int i = index; i < input.Length; i++)
 			{
 				output += input[i];
 			}
+
+			return output;
 		}
 
-		//from '(' create string from chars
-		for (int i = index + 1; i < instructionPos; i++)
+		public static string ProcessInstruction(char breaker, int instructionPos, string input, ref int repeater, ref int selector, ref int index)
 		{
-			selectorString += input[i];
-		}
+			string output = "";
+			string selectorString = "";
+			string repeaterString = "";
+			int interimIndex = 0;
+			int repeatCount = 0;
+			//create interimIndex if we're on the 2nd or greater instruction
+			if (index + selector > 0 && index + selector != instructionPos)
+			{
+				interimIndex = index + selector;
+			}
 
-		//assign selector
-		selector = int.Parse(selectorString);
-		//assign breaker
-		breaker = ')';
-		//set index to known value
-		index = instructionPos;
-		//from 'x', interate forwards to reach ')'
-		while (input[index] != breaker)
-		{
+			//set index to known value
+			index = instructionPos;
+			//from 'x', iterate backwards to reach '(' 
+			while (input[index] != breaker)
+			{
+				index--;
+			}
+
+			//prepend interim chars to output
+			if (interimIndex > 0)
+			{
+				for (int i = interimIndex; i < index; i++)
+				{
+					output += input[i];
+				}
+			}
+
+			//from '(' create string from chars
+			for (int i = index + 1; i < instructionPos; i++)
+			{
+				selectorString += input[i];
+			}
+
+			//assign selector
+			selector = int.Parse(selectorString);
+			//assign breaker
+			breaker = ')';
+			//set index to known value
+			index = instructionPos;
+			//from 'x', interate forwards to reach ')'
+			while (input[index] != breaker)
+			{
+				index++;
+			}
+
+			//from '(' create string from chars
+			for (int i = instructionPos + 1; i < index; i++)
+			{
+				repeaterString += input[i];
+			}
+
+			repeater = int.Parse(repeaterString);
+			//set index to breaker + 
 			index++;
-		}
-
-		//from '(' create string from chars
-		for (int i = instructionPos + 1; i < index; i++)
-		{
-			repeaterString += input[i];
-		}
-
-		repeater = int.Parse(repeaterString);
-		//set index to breaker + 
-		index++;
-		//execute instruction
-		while (repeatCount < repeater)
-		{
-			for (int i = 0; i < selector; i++)
+			//execute instruction
+			while (repeatCount < repeater)
 			{
-				output += input[index + i];
+				for (int i = 0; i < selector; i++)
+				{
+					output += input[index + i];
+				}
+
+				repeatCount++;
 			}
 
-			repeatCount++;
+			//Console.WriteLine("Exiting ProcessInstruction, index is {0}", index);
+			return output;
 		}
 
-		//Console.WriteLine("Exiting ProcessInstruction, index is {0}", index);
-		return output;
-	}
-
-	//sets the position of the next instruction if it exsists
-	public static bool nextInstructionPresent(int index, string input, ref int instructionPos, int selector)
-	{
-		int i = index + selector;
-		bool present = false;
-		while (input[i] != 'x' && i != input.Length - 1)
+		//sets the position of the next instruction if it exsists
+		public static bool nextInstructionPresent(int index, string input, ref int instructionPos, int selector)
 		{
-			i++;
+			int i = index + selector;
+			bool present = false;
+			while (input[i] != 'x' && i != input.Length - 1)
+			{
+				i++;
+			}
+
+			if (input[i] == 'x')
+			{
+				present = true;
+				instructionPos = i;
+			//Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
+			}
+
+			//Console.WriteLine("Exiting nextInstructionPresent, index is {0}, instructionPos is {1}", index, instructionPos);
+			return present;
 		}
 
-		if (input[i] == 'x')
+		public static string RemoveWhitespace(string input)
 		{
-			present = true;
-			instructionPos = i;
-		//Console.WriteLine("New instruction at {0}, {1}", i, input[i]);
+			return new string (input.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
 		}
-
-		//Console.WriteLine("Exiting nextInstructionPresent, index is {0}, instructionPos is {1}", index, instructionPos);
-		return present;
 	}
-
-	public static string RemoveWhitespace(string input)
-	{
-		return new string (input.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
-	}
-}
