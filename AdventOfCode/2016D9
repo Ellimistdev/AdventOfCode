@@ -12,11 +12,11 @@ public class Program
 		Stopwatch watch = new Stopwatch();
 		watch.Start();
 		//readfile
-		WebClient client = new WebClient();
-		Stream stream = client.OpenRead("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2016d9");
-		StreamReader reader = new StreamReader(stream);
-		string content = reader.ReadToEnd();
-		if (tests(watch))
+		string content = readFileFromURL("https://raw.githubusercontent.com/endotnick/AdventOfCode/master/AdventOfCode/Input/2016d9");
+		
+		Console.WriteLine("@ {0} - Beginning Tests", watch.Elapsed);
+		Console.WriteLine("----------------------------------------------");
+		if (tests())
 		{
 			Console.WriteLine("@ {0} - Tests passed - continuing", watch.Elapsed);
 		}
@@ -30,16 +30,11 @@ public class Program
 		Console.WriteLine("@ {0} - 1st Pass Length == {1}", watch.Elapsed, decompString.Length);
 		//dies - don't do it this way
 		//string passTwo = decompressString(decompString);
-		//Console.WriteLine("@ {0} - 2nd Pass Length == {1}",watch.Elapsed,passTwo.Length);
-		//string passThree = decompressString(passTwo);
-		//Console.WriteLine("@ {0} - 3rd Pass Length == {1}",watch.Elapsed,passThree.Length);
-		//string passFour = decompressString(passThree);
-		//Console.WriteLine("@ {0} - 4th Pass Length == {1}",watch.Elapsed,passFour.Length);
 		watch.Stop();
 	}
 
 	//can't use unit tests in online compilers :(
-	public static bool tests(Stopwatch watch)
+	public static bool tests()
 	{
 		string clear = "ADVENT";
 		string whitespace = "A D V E N T";
@@ -65,8 +60,6 @@ public class Program
 		string[] acceptedPass = new string[]{clear_whitePass, clear_whitePass, singlePass, multiplePass, doublesPass, overlapPass, overlapMultiPass, allPass};
 		string[] lengthTests = new string[]{lengthTest, lengthTestLong};
 		int[] lengthTestsPass = new int[]{lengthTestLength, lengthTestLongLength};
-		Console.WriteLine("@ {0} - Beginning Tests", watch.Elapsed);
-		Console.WriteLine("----------------------------------------------");
 		foreach (string test in tests)
 		{
 			int i = Array.IndexOf(tests, test);
@@ -101,6 +94,15 @@ public class Program
 		return true;
 	}
 
+	public static string readFileFromURL(string url)
+	{
+		WebClient client = new WebClient();
+		Stream stream = client.OpenRead(url);
+		StreamReader reader = new StreamReader(stream);
+		string content = reader.ReadToEnd();
+		return content;
+	}
+
 	public static int getDecompressedLength(string input)
 	{
 		/*
@@ -109,7 +111,7 @@ public class Program
 		
 		ASSUMING
 		(WxX)(AxB)stringOne(CxD)stringTwo(ExF)stringThree(YxZ)(GxH)...
-		W will always equal (AxB)stringOne(CxD)stringTwo(ExF)stringThree.Length
+		W will always equal "(AxB)stringOne(CxD)stringTwo(ExF)stringThree".Length
 		A will always equal stringOne.Length
 		C will always equal stringTwo.Length
 		E will always equal stringThree.Length
@@ -134,60 +136,58 @@ public class Program
 		LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL == 50
 		
 	    */
-		int inputLength = 0;
 		int index = 0;
+		int inputLength = 0;
 		int segmentStart = 0;
 		int segmentEnd = 0;
 		int outputLength = 0;
 		string hunter = ")(";
 		while (index + 1 < input.Length)
 		{
-			//Console.WriteLine("input[index] == {0}, input[index+1] == {1}, combined == {2} hunter == {3}",input[index], input[index+1], String.Concat(input[index],input[index+1]), hunter);
 			// find ")("
 			if (String.Concat(input[index], input[index + 1]) == hunter)
 			{
-				Console.WriteLine("HUNTER FOUND @ index {0}", index);
-				Console.WriteLine("hunter == {0}, index == {1}, index + 1 == {2}", hunter, input[index], input[index + 1]);
-				//get working segment
-				// instantiate List 
 				List<KeyValuePair<int, int>> internalMultipliers = new List<KeyValuePair<int, int>>();
 				int internalLength = 0;
-				int segmentLength = 0;
-				int segmentMultiple = 0;
-				char breaker = ')';
-				// set segmentStart = index of '(' (not the string.IndexOf() method)
-				segmentStart = index + 1;
+				int segmentLength;
+				int segmentMultiple;
+				string workingSegment = "";
+				// in instruction (AxB) - set index of '(', 'x', and ')' for use
 				int instructionEnd = index;
 				int instructionPos = reverseSearch(input, instructionEnd, 'x');
 				int instructionStart = reverseSearch(input, instructionPos, '(');
-				Console.WriteLine("segmentStart - {0},{1} instructionStart - {2},{3}", segmentStart, input[segmentStart], instructionStart, input[instructionStart]);
-				// find, set segmentLength 
-				// move backward to find '(', segmentLength == value between '(' and 'x'
-				// find, set segmentMultiple
-				// should be values starting at 'x' + 1, ending at segmentStart - 2
-				// set segmentEnd = (segmentStart + segmentLength)
-				// while index != segmentEnd
-				// move forward from segment start, searching for 'x'
-				// set breaker = '('
-				// move backward from 'x' to breaker
-				// set segmentLength = new int (value between breaker and x)
-				// set breaker = ')'
-				// move forward from 'x' to breaker
-				// set multiple = value between breaker and x
-				segmentMultiple = 0;
+								
+				Console.WriteLine("HUNTER FOUND @ index {0}", index);
+				
+				//set segmentStart = index of '(' in segment
+				segmentStart = index;				
+				
+				//in instruction (AxB) - select A	
+				segmentLength = int.Parse(parseElement(input, instructionStart, instructionPos));
+				
+				//in instruction (AxB) - select B
+				segmentMultiple = int.Parse(parseElement(input, instructionPos, instructionEnd));
+				
+				//need to include the final index
+				segmentEnd = segmentStart + segmentLength + 1;
+				
+				//get working segment
+				workingSegment = parseElement(input, segmentStart, segmentEnd); 			
+				Console.WriteLine("segmentLength {0} segmentMultiple {1} input {2}, segmentStart {3}, workingSegment {4}", segmentLength, segmentMultiple, input, segmentStart, workingSegment);
+				
+				//TODO: iterate over workingSegment to get internalSegmentLength and internalMultiple
+				
 				internalMultipliers.Add(new KeyValuePair<int, int>(segmentLength, segmentMultiple));
 				foreach (KeyValuePair<int, int> entry in internalMultipliers)
 				{
 					internalLength += (entry.Key * entry.Value);
 				}
 
+				//Console.WriteLine("{0}, {1} - {2}",segmentLength, segmentMultiple, internalLength);
 				//now that we don't care about the internal segment lengths, we can reuse this int			
 				segmentLength = (internalLength * segmentMultiple);
 				outputLength += segmentLength;
-			//	index = segmentEnd;
-			}
-			else
-			{
+				// index = segmentEnd;
 			}
 
 			index++;
@@ -206,6 +206,7 @@ public class Program
 		string output = "";
 		instructionPos = input.IndexOf('x');
 		//Console.WriteLine("IN: {0}",test);
+		
 		//handle no instructions
 		if (instructionPos < 0)
 		{
@@ -217,6 +218,7 @@ public class Program
 
 		//process instruction
 		char breaker = '(';
+		
 		//get leading chars
 		if (input.IndexOf(breaker) != 0)
 		{
@@ -237,6 +239,7 @@ public class Program
 			else
 			{
 				//Console.WriteLine("No Instruction Present - appending remainder of string");
+				
 				//skip over selection already processed
 				index = index + selector;
 				output += ProcessRemainingInput(input, index);
@@ -266,6 +269,7 @@ public class Program
 		string output = "";
 		int interimIndex = 0;
 		int repeatCount = 0;
+		
 		//create interimIndex if we're on the 2nd or greater instruction
 		if (index + selector > 0 && index + selector != instructionPos)
 		{
@@ -274,6 +278,7 @@ public class Program
 
 		//from 'x', iterate backwards to reach '(' 
 		index = reverseSearch(input, instructionPos, '(');
+		
 		//prepend interim chars to output
 		if (interimIndex > 0)
 		{
@@ -284,13 +289,17 @@ public class Program
 		}
 
 		//get selector by parsing from '(' to 'x'
-		selector = parseInstructionElement(input, index, instructionPos);
+		selector = int.Parse(parseElement(input, index, instructionPos));
+		
 		//from 'x', interate forwards to reach ')'
 		index = forwardSearch(input, instructionPos, ')');
+		
 		//get repeater by parsing from 'x' to ')'
-		repeater = parseInstructionElement(input, instructionPos, index);
+		repeater = int.Parse(parseElement(input, instructionPos, index));
+		
 		//set index to breaker + 
 		index++;
+		
 		//execute instruction
 		while (repeatCount < repeater)
 		{
@@ -306,7 +315,7 @@ public class Program
 		return output;
 	}
 
-	public static int parseInstructionElement(string input, int startIndex, int endIndex)
+	public static string parseElement(string input, int startIndex, int endIndex)
 	{
 		string element = "";
 		for (int i = startIndex + 1; i < endIndex; i++)
@@ -314,9 +323,7 @@ public class Program
 			element += input[i];
 		}
 
-		//assign selector
-		int elementAsInt = int.Parse(element);
-		return elementAsInt;
+		return element;
 	}
 
 	public static int reverseSearch(string input, int index, char breaker)
@@ -343,6 +350,7 @@ public class Program
 	public static bool nextInstructionPresent(int index, string input, ref int instructionPos)
 	{
 		bool present = false;
+		
 		//find next instructionPos
 		int i = forwardSearch(input, index, 'x');
 		if (input[i] == 'x')
