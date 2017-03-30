@@ -23,16 +23,16 @@ namespace Advent
                 int lxh = currentPresent.Length * currentPresent.Height;
                 int wxh = currentPresent.Width * currentPresent.Height;
 
-                currentPresent.SurfaceArea = ((2 * lxw) + (2 * wxh) + (2 * lxh));             
+                currentPresent.SurfaceArea = ((2 * lxw) + (2 * wxh) + (2 * lxh));
                 currentPresent.SmallestArea = (Math.Min(Math.Min(lxw, wxh), lxh));
                 currentPresent.Volume = (lxw * currentPresent.Height);
 
-                int p1 = ((2 * currentPresent.Length ) + (2 * currentPresent.Width));
+                int p1 = ((2 * currentPresent.Length) + (2 * currentPresent.Width));
                 int p2 = ((2 * currentPresent.Length) + (2 * currentPresent.Height));
                 int p3 = ((2 * currentPresent.Width) + (2 * currentPresent.Height));
 
                 currentPresent.ShortestPerim = (Math.Min(Math.Min(p1, p2), p3));
-                
+
                 Presents.Add(currentPresent);
             }
             int sqft = 0;
@@ -46,12 +46,12 @@ namespace Advent
             Console.WriteLine($"To wrap all {Presents.Count} presents, the elves will need exactly {ribbon} ft of ribbon!");
 
             Console.ReadLine();
-        }  
+        }
     }
     internal class Present
     {
         public int Length { set; get; }
-        public int Width  { set; get; }
+        public int Width { set; get; }
         public int Height { set; get; }
         public int SurfaceArea { set; get; }
         public int SmallestArea { set; get; }

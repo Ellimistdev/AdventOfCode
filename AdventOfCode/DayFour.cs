@@ -30,7 +30,7 @@ namespace Advent
                     continue;
                 else
                     Console.WriteLine("Input was {0}", address);
-                    break;
+                break;
             }
             md5.Dispose();
             Console.WriteLine("AdventCoin address is {0}", adventAddress);
@@ -54,7 +54,7 @@ namespace Advent
         }
 
         private static string getMD5Hash(string input, MD5 md5)
-        {            
+        {
             byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
             byte[] hash = md5.ComputeHash(inputBytes);
             StringBuilder sb = new StringBuilder();

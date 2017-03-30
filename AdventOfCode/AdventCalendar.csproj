@@ -45,6 +45,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="2016D3.cs" />
+    <Compile Include="2016D4.cs" />
+    <Compile Include="2016D5.cs" />
+    <Compile Include="2016D6.cs" />
+    <Compile Include="2016D7.cs" />
+    <Compile Include="2016D8.cs" />
+    <Compile Include="2016D9.cs" />
     <Compile Include="DayFive.cs" />
     <Compile Include="DayFour.cs" />
     <Compile Include="DayOne.cs" />
@@ -60,6 +67,11 @@
   <ItemGroup>
     <Content Include="Input\2.txt" />
     <Content Include="Input\1.txt" />
+    <Content Include="Input\2016d8.txt" />
+    <Content Include="Input\2016d9.txt" />
+    <Content Include="Input\2017.4.1.txt" />
+    <Content Include="Input\2017.7.1.txt" />
+    <Content Include="Input\2017d6p1.txt" />
     <Content Include="Input\3.txt" />
     <Content Include="Input\5test.txt" />
     <Content Include="Input\5.txt" />

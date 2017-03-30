@@ -37,7 +37,7 @@ namespace Advent
 
         private static bool[,] SetupLights(int boardX, int boardY)
         {
-            bool[,] lightBoard = new bool[boardX,boardY];
+            bool[,] lightBoard = new bool[boardX, boardY];
             for (int x = 0; x < boardX; x++)
             {
                 for (int y = 0; y < boardY; y++)
@@ -66,7 +66,7 @@ namespace Advent
 
         private static void processInstructions(bool[,] lightboard, string filePath)
         {
-            List<string> instructions = new List<string>();    
+            List<string> instructions = new List<string>();
 
             foreach (string line in File.ReadAllLines(filePath))
             {
@@ -77,9 +77,9 @@ namespace Advent
                 int yStart = 0;
                 int yEnd = 0;
 
-                
+
                 processLine(line, ref operation, ref xStart, ref xEnd, ref yStart, ref yEnd);
-                
+
                 //nothing happens if xstart and xend are both 0
                 for (int x = xStart; x != xEnd; x++)
                 {
@@ -105,7 +105,7 @@ namespace Advent
                         }
                     }
                 }
-            } 
+            }
         }
 
         private static void processLine(string line, ref int operation, ref int xStart, ref int xEnd, ref int yStart, ref int yEnd)
@@ -134,7 +134,7 @@ namespace Advent
             }
             if (strArray.Length == 5)
             {
-                tmpStart = strArray[2].Split(','); 
+                tmpStart = strArray[2].Split(',');
                 xStart = int.Parse(tmpStart[0]);
                 yStart = int.Parse(tmpStart[1]);
 

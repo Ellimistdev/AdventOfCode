@@ -33,7 +33,7 @@ namespace Advent
 
             // separate instructions
             for (int i = 0; i < instructions.Length; i++)
-            {                
+            {
                 if (i % 2 == 0)
                 {
                     roboInstructions.SetValue((instructions.ElementAt(i)), roboIndex);
@@ -57,7 +57,7 @@ namespace Advent
         {
             int x = 0;
             int y = 0;
-            
+
             foreach (char i in instructions)
             {
                 if (i == '^')
